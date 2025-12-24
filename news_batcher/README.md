@@ -19,7 +19,7 @@ Google Gemini와 FastAPI를 활용하여 매일 경제 뉴스를 수집하고 �
     *   `schema.sql` 파일의 내용을 참고하여 테이블을 미리 생성해도 되지만, 앱 실행 시 자동으로 테이블을 생성하려고 시도합니다.
 3.  **환경 변수 설정**: `docker-compose.yml` 파일에서 다음 내용을 수정합니다.
     *   `DATABASE_URL`: `mysql+pymysql://아이디:비번@DB주소:포트/DB이름` 형식으로 입력합니다.
-        *   Synology 내부 네트워크의 DB라면 `localhost` 대신 NAS 내부 IP를 사용해야 합니다.
+    *   Synology 내부 네트워크의 DB라면 `localhost` 대신 NAS 내부 IP를 사용해야 합니다.
     *   `GEMINI_API_KEY`: [Google AI Studio](https://aistudio.google.com/)에서 발급받은 키를 입력합니다.
 4.  **실행**:
     *   SSH로 접속하여 `docker-compose up -d --build` 명령어를 실행하거나,
@@ -78,3 +78,56 @@ Docker 없이 Python 환경에서 바로 실행하려면 데이터베이스를 S
     uvicorn app.main:app --reload
     ```
 
+## Docker Hub 배포 방법
+
+도커 이미지를 빌드하여 Docker Hub에 업로드하려면 다음 절차를 따르세요.
+
+1. **로그인**
+   터미널에서 도커 허브 계정으로 로그인합니다.
+   ```bash
+   docker login
+   ```
+
+2. **이미지 빌드 및 태그 설정**
+   본인의 도커 허브 아이디와 레포지토리 이름으로 이미지를 빌드합니다.
+   (예: 아이디가 `myuser`, 레포지토리가 `news-batcher`인 경우)
+   ```bash
+   # 이미지 빌드 (맨 뒤 점(.) 필수)
+   # myuser 부분을 본인의 Docker Hub ID로 변경하세요.
+   docker build -t myuser/news-batcher:latest .
+   ```
+
+3. **이미지 푸시 (업로드)**
+   ```bash
+   docker push myuser/news-batcher:latest
+   ```
+
+4. **Synology 등 타 서버에서 실행**
+   `docker-compose.yml`의 `image:` 필드를 위에서 푸시한 이미지명으로 변경하거나, 아래 명령어로 직접 실행할 수 있습니다.
+   ```bash
+   docker run -d --name news_batcher \
+     -p 8000:8000 \
+     -e DATABASE_URL="mysql+pymysql://..." \
+     -e GEMINI_API_KEY="AIza..." \
+     myuser/news-batcher:latest
+
+    docker-compose -f docker-compose-synology.yml up -d
+   ```
+
+## 주의: Synology DB 연결 오류 해결 (`ECONNREFUSED 127.0.0.1`)
+
+Synology NAS에서 도커 컨테이너 실행 시 `127.0.0.1`로 접속하면 오류가 발생합니다. 이는 **컨테이너 내부의 localhost**를 의미하기 때문입니다.
+
+1.  **NAS IP 확인하기**
+    *   `127.0.0.1` 대신 Synology NAS의 **사설 IP 주소**를 사용해야 합니다.
+    *   예: `192.168.0.10` 또는 `172.30.1.5` 등
+    *   제어판 -> 네트워크 -> 네트워크 인터페이스 에서 확인할 수 있습니다.
+
+2.  **DATABASE_URL 수정**
+    *   Synology Container Manager(Docker) -> 컨테이너 -> 세부사항 -> 설정 -> 환경 변수에서 `DATABASE_URL`을 수정하세요.
+    *   **변경 전**: `mysql+pymysql://root:비번@127.0.0.1:3306/albert` (X)
+    *   **변경 후**: `mysql+pymysql://root:비번@192.168.0.10:3306/albert` (O)
+
+3.  **MariaDB 외부 접속 허용**
+    *   Synology 패키지 센터의 MariaDB 설정에서 "TCP/IP 연결 활성화"가 체크되어 있어야 합니다.
+    *   또한 방화벽이 3306 포트를 차단하고 있지 않은지 확인하세요.

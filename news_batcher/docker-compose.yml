@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build: .
@@ -8,9 +6,9 @@ services:
     environment:
       # 외부 DB 연결 정보 (Synology 내 다른 컨테이너의 MariaDB라면 해당 컨테이너 IP 또는 호스트명 사용)
       # 예: mysql+pymysql://user:password@192.168.1.100:3306/news_db
-      - DATABASE_URL=mysql+pymysql://news_user:news_password@external_db_host:3306/news_db
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - RSS_FEED_URL=https://news.google.com/rss/topics/CAAqIggKIhxDQkFTRDgwZ0hzQlJCelZnV25Oc2JXd3FCSG9A?hl=ko&gl=KR&ceid=KR%3Ako
+      - DATABASE_URL=mysql+pymysql://root:password@dbip:3306/dbname
+      - GEMINI_API_KEY=GEMINI_API_KEY
+      - RSS_FEED_URL=https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko
       - BATCH_SCHEDULE_HOUR=9
       - BATCH_SCHEDULE_MINUTE=0
       - TZ=Asia/Seoul
