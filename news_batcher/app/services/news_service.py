@@ -129,7 +129,7 @@ def fetch_and_process_news(db: Session, limit: int = 10):
         if model:
             try:
                 prompt = f"""
-                다음 뉴스 기사를 한국어로 3줄 요약해줘.
+                다음 뉴스 기사를 한국어로 10줄 요약해줘.
                 
                 제목: {title}
                 내용: {content_snippet}
